@@ -160,10 +160,6 @@ components:
           example: 45.5
         popularity:
           $ref: '#/components/schemas/PopularityStats'
-        canSubmitFeedback:
-          type: boolean
-          description: Whether user can submit feedback
-          example: true
 
     DishFeedback:
       type: object
