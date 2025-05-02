@@ -29,14 +29,17 @@ func OpenDatabase(path string) (*sql.DB, error) {
 func InitDatabase(db *sql.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS Dishes (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL,
-		img TEXT,
-		calorie INTEGER NOT NULL,
-		runtime INTEGER NOT NULL,
-		like REAL DEFAULT 0,
-		dislike REAL DEFAULT 0,
-		nationality TEXT
+	name TEXT NOT NULL,
+	img TEXT,
+	calorie INTEGER NOT NULL,
+	runtime INTEGER NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS Feedbacks (
+	dishName TEXT NOT NULL,
+	nationality TEXT NOT NULL,
+	like REAL DEFAULT 0,
+	dislike REAL DEFAULT 0
 	);
 	`
 	_, err := db.Exec(query)
