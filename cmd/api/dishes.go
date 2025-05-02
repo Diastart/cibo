@@ -19,6 +19,32 @@ func (app *application) dishdetailsHandler(response http.ResponseWriter, request
 		return
 	}
 	dish, err := database.GetDishDetails(app.db, app.logger, dishName, nationality)
+	if err != nil {
+		if err == database.ErrDishNotFound {
+			app.notFoundResponse(response)
+		} else {
+			app.serverErrorResponse(response, err)
+		}
+		return
+	}
+	
+	jsonResponse := struct {
+		Success bool          `json:"success"`
+		Data    *database.Dish `json:"data"`
+	}{
+		Success: true,
+		Data:    dish,
+	}
+	
+	js, err := json.Marshal(jsonResponse)
+	if err != nil {
+		app.serverErrorResponse(response, err)
+		return
+	}
+	
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(http.StatusOK)
+	response.Write(js)
 }
 
 func (app *application) dishfeedbackHandler(response http.ResponseWriter, request *http.Request) {
