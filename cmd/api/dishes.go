@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"backend.CiboCompass.net/internal/database"
+	"encoding/json"
 )
 
 func (app *application) dishdetailsHandler(response http.ResponseWriter, request *http.Request) {
@@ -16,11 +18,10 @@ func (app *application) dishdetailsHandler(response http.ResponseWriter, request
 		app.notFoundResponse(response)
 		return
 	}
-	
+	dish, err := database.GetDishDetails(app.db, app.logger, dishName, nationality)
 }
 
 func (app *application) dishfeedbackHandler(response http.ResponseWriter, request *http.Request) {
-	// Use the helper functions to parse and validate inputs
 	dishName, err := app.ReadDishNameParam(request)
 	if err != nil {
 		app.notFoundResponse(response)
@@ -39,4 +40,31 @@ func (app *application) dishfeedbackHandler(response http.ResponseWriter, reques
 		return
 	}
 	
+	err = database.UpdateDishFeedback(app.db, app.logger, dishName, nationality, feedback)
+	if err != nil {
+		if err == database.ErrDishNotFound {
+			app.notFoundResponse(response)
+		} else {
+			app.serverErrorResponse(response, err)
+		}
+		return
+	}
+
+	jsonResponse := struct {
+		Success bool   `json:"success"`
+		Message string `json:"message"`
+	}{
+		Success: true,
+		Message: "Feedback recorded successfully",
+	}
+
+	js, err := json.Marshal(jsonResponse)
+	if err != nil {
+		app.serverErrorResponse(response, err)
+		return
+	}
+
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(http.StatusOK)
+	response.Write(js)
 }
