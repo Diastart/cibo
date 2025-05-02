@@ -7,8 +7,8 @@ import (
 
 func (app *application) routes() *httprouter.Router {
 	router := httprouter.New()
-
 	router.HandlerFunc(http.MethodGet,"/v1/healthcheck", app.healthcheckHandler)
-	// here I am gonna add all the endpoints specified in OpenAPI documentation
+	router.HandlerFunc(http.MethodGet,"/v1/dishes/search", app.dishdetailsHandler)
+	router.HandlerFunc(http.MethodPost,"/v1/dishes/feedback", app.dishfeedbackHandler)
 	return router
 }
