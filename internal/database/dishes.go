@@ -104,9 +104,9 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 		}
 	} else {
 		if feedback == "like" {
-			queryStr = `UPDATE Feedbacks SET like = like + 1 WHERE dishName = ? AND nationality = ?`
+			queryStr = `UPDATE Feedbacks SET like = like + 1, dislike = dislike WHERE dishName = ? AND nationality = ?`
 		} else {
-			queryStr = `UPDATE Feedbacks SET dislike = dislike + 1 WHERE dishName = ? AND nationality = ?`
+			queryStr = `UPDATE Feedbacks SET dislike = dislike + 1, like = like WHERE dishName = ? AND nationality = ?`
 		}
 		
 		_, err = db.Exec(queryStr, dishName, nationality)

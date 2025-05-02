@@ -8,7 +8,7 @@ import (
 func (app *application) routes() *httprouter.Router {
 	router := httprouter.New()
 	router.HandlerFunc(http.MethodGet,"/v1/healthcheck", app.healthcheckHandler)
-	router.HandlerFunc(http.MethodGet,"/v1/dishes/search", app.dishdetailsHandler)
-	router.HandlerFunc(http.MethodPost,"/v1/dishes/feedback", app.dishfeedbackHandler)
+	router.HandlerFunc(http.MethodGet,"/v1/dishes/:dishName", app.dishdetailsHandler)
+	router.HandlerFunc(http.MethodPost,"/v1/dishes/:dishName/feedback", app.dishfeedbackHandler)
 	return router
 }
