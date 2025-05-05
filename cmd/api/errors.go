@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"encoding/json"
 )
 
 func (app *application) badRequestResponse(response http.ResponseWriter, message string) {
@@ -25,13 +24,10 @@ func (app *application) errorResponse(response http.ResponseWriter, status int, 
 		Error:   message,
 		Success: false,
 	}
-	js, err := json.Marshal(jsonresponse)
+	
+	err := app.writeJSON(response, status, jsonresponse, nil)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte("internal server error"))
-		return
 	}
-	response.Header().Set("Content-Type", "application/json")
-	response.WriteHeader(status)
-	response.Write(js)
 }

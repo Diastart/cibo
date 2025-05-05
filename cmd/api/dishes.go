@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"backend.CiboCompass.net/internal/database"
-	"encoding/json"
 )
 
 func (app *application) dishdetailsHandler(response http.ResponseWriter, request *http.Request) {
@@ -36,15 +35,11 @@ func (app *application) dishdetailsHandler(response http.ResponseWriter, request
 		Data:    dish,
 	}
 	
-	js, err := json.Marshal(jsonResponse)
+	err = app.writeJSON(response, http.StatusOK, jsonResponse, nil)
 	if err != nil {
 		app.serverErrorResponse(response, err)
 		return
 	}
-	
-	response.Header().Set("Content-Type", "application/json")
-	response.WriteHeader(http.StatusOK)
-	response.Write(js)
 }
 
 func (app *application) dishfeedbackHandler(response http.ResponseWriter, request *http.Request) {
@@ -84,13 +79,9 @@ func (app *application) dishfeedbackHandler(response http.ResponseWriter, reques
 		Message: "Feedback recorded successfully",
 	}
 
-	js, err := json.Marshal(jsonResponse)
+	err = app.writeJSON(response, http.StatusOK, jsonResponse, nil)
 	if err != nil {
 		app.serverErrorResponse(response, err)
 		return
 	}
-
-	response.Header().Set("Content-Type", "application/json")
-	response.WriteHeader(http.StatusOK)
-	response.Write(js)
 }

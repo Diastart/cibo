@@ -1,12 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
-func (app *application) healthcheckHandler(response http.ResponseWriter, request *http.Request){
-	fmt.Fprintln(response, "status: available")
-	fmt.Fprintf(response, "environment: %s\n", app.config.env)
-	fmt.Fprintf(response, "version: %s\n", version)
+func (app *application) healthcheckHandler(response http.ResponseWriter, request *http.Request) {
+	data := struct {
+		Status      string `json:"status"`
+		Environment string `json:"environment"`
+		Version     string `json:"version"`
+		Success     bool   `json:"success"`
+	}{
+		Status:      "available",
+		Environment: app.config.env,
+		Version:     version,
+		Success:     true,
+	}
+	app.writeJSON(response, http.StatusOK, data, nil)
 }

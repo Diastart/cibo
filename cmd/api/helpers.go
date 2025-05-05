@@ -8,6 +8,23 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func (app *application) writeJSON(response http.ResponseWriter, status int, data interface{}, headers http.Header) error {
+	js, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	
+	for key, value := range headers {
+		response.Header()[key] = value
+	}
+	
+	response.Header().Set("Access-Control-Allow-Origin", "*")
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(status)
+	response.Write(js)
+	
+	return nil
+}
 func (app *application) ReadDishNameParam(request *http.Request) (string, error) {
 	params := httprouter.ParamsFromContext(request.Context())
 	dishName := params.ByName("dishName")
