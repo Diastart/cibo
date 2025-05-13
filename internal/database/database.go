@@ -29,10 +29,21 @@ func OpenDatabase(path string) (*sql.DB, error) {
 func InitDatabase(db *sql.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS Dishes (
-	name TEXT NOT NULL,
-	img TEXT,
-	calorie INTEGER NOT NULL,
-	runtime INTEGER NOT NULL
+	name TEXT NOT NULL PRIMARY KEY,
+	img TEXT
+	);
+
+	CREATE TABLE IF NOT EXISTS Ingredients (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	ingredientName TEXT NOT NULL UNIQUE
+	);
+
+	CREATE TABLE IF NOT EXISTS DishesToIngredients (
+	dishName TEXT NOT NULL,
+	ingredientID INTEGER NOT NULL,
+	PRIMARY KEY (dishName, ingredientID),
+	FOREIGN KEY (dishName) REFERENCES Dishes(name),
+	FOREIGN KEY (ingredientID) REFERENCES Ingredients(id)
 	);
 
 	CREATE TABLE IF NOT EXISTS Feedbacks (
@@ -44,7 +55,7 @@ func InitDatabase(db *sql.DB) error {
 	`
 	_, err := db.Exec(query)
 	if err != nil {
-		return fmt.Errorf("failed to create dishes table: %w", err)
+		return fmt.Errorf("failed to create database tables: %w", err)
 	}
 	return nil
 }

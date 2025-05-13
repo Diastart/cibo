@@ -5,15 +5,19 @@ import (
 	"errors"
 )
 
+type Ingredient struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 type Dish struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name"`
-	ImageURL    string  `json:"img"`
-	Calorie     int     `json:"calorie"`
-	Runtime     int     `json:"runtime"`
-	Like        float64 `json:"like"`
-	Dislike     float64 `json:"dislike"`
-	Nationality string  `json:"nationality"`
+	ID          int          `json:"id"`
+	Name        string       `json:"name"`
+	ImageURL    string       `json:"img"`
+	Like        float64      `json:"like"`
+	Dislike     float64      `json:"dislike"`
+	Nationality string       `json:"nationality"`
+	Ingredients []Ingredient `json:"ingredients"`
 }
 
 type Logger interface {
@@ -22,10 +26,11 @@ type Logger interface {
 }
 
 var ErrDishNotFound = errors.New("dish not found")
+var ErrIngredientNotFound = errors.New("ingredient not found")
 
 func GetDishDetails(db *sql.DB, logger Logger, dishName string, nationality string) (*Dish, error) {
 	dishQuery := `
-		SELECT name, img, calorie, runtime 
+		SELECT name, img 
 		FROM Dishes 
 		WHERE name = ?
 	`
@@ -34,8 +39,6 @@ func GetDishDetails(db *sql.DB, logger Logger, dishName string, nationality stri
 	err := db.QueryRow(dishQuery, dishName).Scan(
 		&dish.Name,
 		&dish.ImageURL,
-		&dish.Calorie,
-		&dish.Runtime,
 	)
 	
 	if err != nil {
@@ -63,6 +66,38 @@ func GetDishDetails(db *sql.DB, logger Logger, dishName string, nationality stri
 		return nil, err
 	}
 	
+	// Get ingredients for the dish
+	ingredientsQuery := `
+		SELECT i.id, i.ingredientName
+		FROM Ingredients i
+		JOIN DishesToIngredients di ON i.id = di.ingredientID
+		WHERE di.dishName = ?
+	`
+	
+	rows, err := db.Query(ingredientsQuery, dishName)
+	if err != nil {
+		logger.Printf("Error querying ingredients: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var ingredients []Ingredient
+	for rows.Next() {
+		var ingredient Ingredient
+		err := rows.Scan(&ingredient.ID, &ingredient.Name)
+		if err != nil {
+			logger.Printf("Error scanning ingredient: %v", err)
+			return nil, err
+		}
+		ingredients = append(ingredients, ingredient)
+	}
+	
+	if err = rows.Err(); err != nil {
+		logger.Printf("Error iterating ingredient rows: %v", err)
+		return nil, err
+	}
+	
+	dish.Ingredients = ingredients
 	dish.Nationality = nationality
 	logger.Printf("Successfully retrieved details for dish '%s' and nationality '%s'", dishName, nationality)
 	return &dish, nil
@@ -118,5 +153,85 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 	
 	logger.Printf("Successfully updated '%s' feedback for dish '%s' and nationality '%s'", 
 		feedback, dishName, nationality)
+	return nil
+}
+
+func AddIngredient(db *sql.DB, logger Logger, ingredientName string) (int, error) {
+	// Check if ingredient already exists
+	query := `SELECT id FROM Ingredients WHERE ingredientName = ?`
+	var id int
+	err := db.QueryRow(query, ingredientName).Scan(&id)
+	if err == nil {
+		// Ingredient already exists, return its ID
+		return id, nil
+	} else if err != sql.ErrNoRows {
+		// A database error occurred
+		logger.Printf("Error checking if ingredient exists: %v", err)
+		return 0, err
+	}
+	
+	// Insert new ingredient
+	result, err := db.Exec(`INSERT INTO Ingredients (ingredientName) VALUES (?)`, ingredientName)
+	if err != nil {
+		logger.Printf("Error inserting new ingredient: %v", err)
+		return 0, err
+	}
+	
+	// Get the last inserted ID
+	lastID, err := result.LastInsertId()
+	if err != nil {
+		logger.Printf("Error getting last insert ID: %v", err)
+		return 0, err
+	}
+	
+	logger.Printf("Successfully added ingredient '%s' with ID %d", ingredientName, lastID)
+	return int(lastID), nil
+}
+
+func AddIngredientToDish(db *sql.DB, logger Logger, dishName string, ingredientID int) error {
+	// Check if dish exists
+	var count int
+	err := db.QueryRow(`SELECT COUNT(*) FROM Dishes WHERE name = ?`, dishName).Scan(&count)
+	if err != nil {
+		logger.Printf("Error checking if dish exists: %v", err)
+		return err
+	}
+	if count == 0 {
+		logger.Printf("Dish '%s' not found", dishName)
+		return ErrDishNotFound
+	}
+	
+	// Check if ingredient exists
+	err = db.QueryRow(`SELECT COUNT(*) FROM Ingredients WHERE id = ?`, ingredientID).Scan(&count)
+	if err != nil {
+		logger.Printf("Error checking if ingredient exists: %v", err)
+		return err
+	}
+	if count == 0 {
+		logger.Printf("Ingredient with ID %d not found", ingredientID)
+		return ErrIngredientNotFound
+	}
+	
+	// Check if the relationship already exists
+	err = db.QueryRow(`SELECT COUNT(*) FROM DishesToIngredients WHERE dishName = ? AND ingredientID = ?`, 
+		dishName, ingredientID).Scan(&count)
+	if err != nil {
+		logger.Printf("Error checking if dish-ingredient relation exists: %v", err)
+		return err
+	}
+	if count > 0 {
+		// Relationship already exists, no need to insert
+		return nil
+	}
+	
+	// Add the relationship
+	_, err = db.Exec(`INSERT INTO DishesToIngredients (dishName, ingredientID) VALUES (?, ?)`, 
+		dishName, ingredientID)
+	if err != nil {
+		logger.Printf("Error adding ingredient to dish: %v", err)
+		return err
+	}
+	
+	logger.Printf("Successfully added ingredient %d to dish '%s'", ingredientID, dishName)
 	return nil
 }
