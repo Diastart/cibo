@@ -26,7 +26,6 @@ type Logger interface {
 }
 
 var ErrDishNotFound = errors.New("dish not found")
-var ErrIngredientNotFound = errors.New("ingredient not found")
 
 func GetDishDetails(db *sql.DB, logger Logger, dishName string, nationality string) (*Dish, error) {
 	dishQuery := `
@@ -66,7 +65,6 @@ func GetDishDetails(db *sql.DB, logger Logger, dishName string, nationality stri
 		return nil, err
 	}
 	
-	// Get ingredients for the dish
 	ingredientsQuery := `
 		SELECT i.id, i.ingredientName
 		FROM Ingredients i
@@ -153,85 +151,5 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 	
 	logger.Printf("Successfully updated '%s' feedback for dish '%s' and nationality '%s'", 
 		feedback, dishName, nationality)
-	return nil
-}
-
-func AddIngredient(db *sql.DB, logger Logger, ingredientName string) (int, error) {
-	// Check if ingredient already exists
-	query := `SELECT id FROM Ingredients WHERE ingredientName = ?`
-	var id int
-	err := db.QueryRow(query, ingredientName).Scan(&id)
-	if err == nil {
-		// Ingredient already exists, return its ID
-		return id, nil
-	} else if err != sql.ErrNoRows {
-		// A database error occurred
-		logger.Printf("Error checking if ingredient exists: %v", err)
-		return 0, err
-	}
-	
-	// Insert new ingredient
-	result, err := db.Exec(`INSERT INTO Ingredients (ingredientName) VALUES (?)`, ingredientName)
-	if err != nil {
-		logger.Printf("Error inserting new ingredient: %v", err)
-		return 0, err
-	}
-	
-	// Get the last inserted ID
-	lastID, err := result.LastInsertId()
-	if err != nil {
-		logger.Printf("Error getting last insert ID: %v", err)
-		return 0, err
-	}
-	
-	logger.Printf("Successfully added ingredient '%s' with ID %d", ingredientName, lastID)
-	return int(lastID), nil
-}
-
-func AddIngredientToDish(db *sql.DB, logger Logger, dishName string, ingredientID int) error {
-	// Check if dish exists
-	var count int
-	err := db.QueryRow(`SELECT COUNT(*) FROM Dishes WHERE name = ?`, dishName).Scan(&count)
-	if err != nil {
-		logger.Printf("Error checking if dish exists: %v", err)
-		return err
-	}
-	if count == 0 {
-		logger.Printf("Dish '%s' not found", dishName)
-		return ErrDishNotFound
-	}
-	
-	// Check if ingredient exists
-	err = db.QueryRow(`SELECT COUNT(*) FROM Ingredients WHERE id = ?`, ingredientID).Scan(&count)
-	if err != nil {
-		logger.Printf("Error checking if ingredient exists: %v", err)
-		return err
-	}
-	if count == 0 {
-		logger.Printf("Ingredient with ID %d not found", ingredientID)
-		return ErrIngredientNotFound
-	}
-	
-	// Check if the relationship already exists
-	err = db.QueryRow(`SELECT COUNT(*) FROM DishesToIngredients WHERE dishName = ? AND ingredientID = ?`, 
-		dishName, ingredientID).Scan(&count)
-	if err != nil {
-		logger.Printf("Error checking if dish-ingredient relation exists: %v", err)
-		return err
-	}
-	if count > 0 {
-		// Relationship already exists, no need to insert
-		return nil
-	}
-	
-	// Add the relationship
-	_, err = db.Exec(`INSERT INTO DishesToIngredients (dishName, ingredientID) VALUES (?, ?)`, 
-		dishName, ingredientID)
-	if err != nil {
-		logger.Printf("Error adding ingredient to dish: %v", err)
-		return err
-	}
-	
-	logger.Printf("Successfully added ingredient %d to dish '%s'", ingredientID, dishName)
 	return nil
 }
