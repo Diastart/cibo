@@ -18,6 +18,7 @@ type Dish struct {
 	Dislike     float64      `json:"dislike"`
 	Nationality string       `json:"nationality"`
 	Ingredients []Ingredient `json:"ingredients"`
+	Comments    []string     `json:"comments,omitempty"`
 }
 
 type Logger interface {
@@ -97,6 +98,15 @@ func GetDishDetails(db *sql.DB, logger Logger, dishName string, nationality stri
 	
 	dish.Ingredients = ingredients
 	dish.Nationality = nationality
+	
+	// Get dish comments
+	comments, err := GetDishComments(db, logger, dishName)
+	if err != nil && err != ErrDishNotFound {
+		logger.Printf("Error getting comments: %v", err)
+		return nil, err
+	}
+	dish.Comments = comments
+	
 	logger.Printf("Successfully retrieved details for dish '%s' and nationality '%s'", dishName, nationality)
 	return &dish, nil
 }
@@ -152,4 +162,70 @@ func UpdateDishFeedback(db *sql.DB, logger Logger, dishName string, nationality 
 	logger.Printf("Successfully updated '%s' feedback for dish '%s' and nationality '%s'", 
 		feedback, dishName, nationality)
 	return nil
+}
+
+func AddDishComment(db *sql.DB, logger Logger, dishName string, comment string) error {
+	dishQuery := `SELECT COUNT(*) FROM Dishes WHERE name = ?`
+	var count int
+	err := db.QueryRow(dishQuery, dishName).Scan(&count)
+	if err != nil {
+		logger.Printf("Error checking if dish exists: %v", err)
+		return err
+	}
+	
+	if count == 0 {
+		logger.Printf("Dish '%s' not found", dishName)
+		return ErrDishNotFound
+	}
+
+	queryStr := `INSERT INTO Comments (dishName, comment) VALUES (?, ?)`
+	_, err = db.Exec(queryStr, dishName, comment)
+	if err != nil {
+		logger.Printf("Error adding comment: %v", err)
+		return err
+	}
+	
+	logger.Printf("Successfully added comment for dish '%s'", dishName)
+	return nil
+}
+
+func GetDishComments(db *sql.DB, logger Logger, dishName string) ([]string, error) {
+	dishQuery := `SELECT COUNT(*) FROM Dishes WHERE name = ?`
+	var count int
+	err := db.QueryRow(dishQuery, dishName).Scan(&count)
+	if err != nil {
+		logger.Printf("Error checking if dish exists: %v", err)
+		return nil, err
+	}
+	
+	if count == 0 {
+		logger.Printf("Dish '%s' not found", dishName)
+		return nil, ErrDishNotFound
+	}
+
+	commentsQuery := `SELECT comment FROM Comments WHERE dishName = ?`
+	rows, err := db.Query(commentsQuery, dishName)
+	if err != nil {
+		logger.Printf("Error querying comments: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var comments []string
+	for rows.Next() {
+		var comment string
+		err := rows.Scan(&comment)
+		if err != nil {
+			logger.Printf("Error scanning comment: %v", err)
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+	
+	if err = rows.Err(); err != nil {
+		logger.Printf("Error iterating comment rows: %v", err)
+		return nil, err
+	}
+	
+	return comments, nil
 }

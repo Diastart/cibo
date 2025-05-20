@@ -67,3 +67,21 @@ func (app *application) ReadDishFeedback(request *http.Request) (string, error) 
 	
 	return input.Feedback, nil
 }
+
+func (app *application) ReadDishComment(request *http.Request) (string, error) {
+	var input struct {
+		Comment string `json:"comment"`
+	}
+	
+	decoder := json.NewDecoder(request.Body)
+	err := decoder.Decode(&input)
+	if err != nil {
+		return "", errors.New("invalid request body")
+	}
+	
+	if input.Comment == "" {
+		return "", errors.New("missing comment value")
+	}
+	
+	return input.Comment, nil
+}

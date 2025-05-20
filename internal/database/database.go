@@ -52,6 +52,12 @@ func InitDatabase(db *sql.DB) error {
 	like REAL DEFAULT 0,
 	dislike REAL DEFAULT 0
 	);
+
+	CREATE TABLE IF NOT EXISTS Comments (
+	dishName TEXT NOT NULL,
+	comment TEXT NOT NULL,
+	FOREIGN KEY (dishName) REFERENCES Dishes(name)
+	);
 	`
 	_, err := db.Exec(query)
 	if err != nil {
