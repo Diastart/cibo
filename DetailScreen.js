@@ -29,6 +29,7 @@ const API_BASE_URL = 'http://192.168.182.216:4000/v1';
 const IMAGES_BASE_URL = 'http://192.168.182.216:4000';
 const DEFAULT_NATIONALITY = 'France';
 
+
 const NATIONALITIES = [
   { name: 'France', flag: '🇫🇷' },
   { name: 'India', flag: '🇮🇳' },
@@ -105,8 +106,8 @@ export default function DetailScreen({ route, navigation }) {
   const [showFeedbackPage, setShowFeedbackPage] = React.useState(false);
   const [userRating, setUserRating] = React.useState(0);
   const [submittingFeedback, setSubmittingFeedback] = React.useState(false);
-  const [scrollPosition, setScrollPosition] = React.useState(0);
   const scrollViewRef = React.useRef(null);
+
   const keyboardOffset = React.useRef(new Animated.Value(0)).current;
   const { dishName } = route.params;
     // ─── 新增：存放每个国家的平均星级（整数 0～5）
@@ -116,17 +117,73 @@ export default function DetailScreen({ route, navigation }) {
   
   const [countryFilter, setCountryFilter] = React.useState('');
   const badges = BADGE_MAP[dishName] || []; 
-
+  const scrollPositionRef = React.useRef(0);
   //for animation
   const screenW = Dimensions.get('window').width;
   // 用来控制国家列表面板的 translateX，从 screenW（看不见） 到 0
   const countryAnim = React.useRef(new Animated.Value(screenW)).current;
 
+    // When tapping a country card:
+    const handleCountryCardPress = async (country) => {
+        // 1. Store current scroll position
+        const currentScrollY = scrollPositionRef.current;
+        
+        // 2. Dismiss keyboard & animate panel closed
+        Keyboard.dismiss();
+        Animated.timing(countryAnim, {
+            toValue: screenW,
+            duration: 300,
+            useNativeDriver: true,
+        }).start(async () => {
+            setShowCountrySelection(false);
+            
+            // 3. Update rating country & fetch new data
+            setRatingCountry(country);
+            await fetchDishForCountry(country);
+            
+            // 4. Restore scroll position with proper delay
+            setTimeout(() => {
+            scrollViewRef.current?.scrollTo({
+                y: currentScrollY,
+                animated: true, // Change to false to avoid the up-down animation
+            });
+            }, 100); // Reduced delay
+        });
+        };
+
+   const handleSelectNation = async (nationName) => {
+        // 1. Store current scroll position before any changes
+        const currentScrollY = scrollPositionRef.current;
+        
+        // 2. Update UI to show new country
+        setRatingCountry(nationName);
+        setSelectedCountry(nationName);
+
+        // 3. Close the panel first
+        setShowCountrySelection(false);
+        
+        // 4. Animate panel closed
+        Animated.timing(countryAnim, {
+            toValue: screenW,
+            duration: 300,
+            useNativeDriver: true,
+        }).start(async () => {
+            // 5. Fetch the dish data under that nationality
+            await fetchDishForCountry(nationName);
+            
+            // 6. Restore scroll position immediately after data loads
+            requestAnimationFrame(() => {
+            scrollViewRef.current?.scrollTo({
+                y: currentScrollY,
+                animated: true, // Use false to prevent bouncing animation
+            });
+            });
+        });
+        };
   // 假设 dishName = "Pizza Margherita"
   const words = (dishData?.name || "Dish").split(' ');
   const first = words.shift();         // "Pizza"
   const rest  = words.join(' ');       // "Margherita"
-
   React.useEffect(() => {
     Animated.timing(countryAnim, {
       toValue: showCountrySelection ? 0 : screenW,
@@ -135,19 +192,19 @@ export default function DetailScreen({ route, navigation }) {
     }).start();
   }, [showCountrySelection]);
 
-  const closeCountrySelection = () => {
-    // first, dismiss any open keyboard:
-    Keyboard.dismiss();
-    Animated.timing(countryAnim, {
-      toValue: screenW,          // slide off to the right
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      // only once the animation has finished do we actually hide the panel
-      setShowCountrySelection(false);
-    });
-    
-  };
+const closeCountrySelection = () => {
+  Keyboard.dismiss();
+
+  Animated.timing(countryAnim, {
+    toValue: screenW,
+    duration: 300,
+    useNativeDriver: true,
+  }).start(() => {
+    // hide the panel
+    setShowCountrySelection(false);
+
+  });
+};
   const openCountrySelection = () => {
     setShowCountrySelection(true);
     Animated.timing(countryAnim, {
@@ -205,34 +262,27 @@ export default function DetailScreen({ route, navigation }) {
     if (!dishData) return;
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/dishes/${encodeURIComponent(dishData.name)}`, {
+        const response = await fetch(`${API_BASE_URL}/dishes/${encodeURIComponent(dishData.name)}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'X-User-Nationality': country,
+            'Content-Type': 'application/json',
+            'X-User-Nationality': country,
         },
-      });
+        });
 
-      if (response.ok) {
+        if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          setDishData(data.data);
-          // Restore scroll position with smoother, slower animation after data loads
-          setTimeout(() => {
-            scrollViewRef.current?.scrollTo({ 
-              y: scrollPosition, 
-              animated: true,
-              // Make the animation slower and smoother
-            });
-          }, 300);
+            setDishData(data.data);
+            // Remove the scroll restoration from here since we handle it in the calling functions
         }
-      }
+        }
     } catch (err) {
-      console.log('Error fetching dish for country:', err.message);
+        console.log('Error fetching dish for country:', err.message);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+    };
 
   const handleCountrySelection = (country) => {
     setSelectedCountry(country);
@@ -269,7 +319,7 @@ export default function DetailScreen({ route, navigation }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Nationality': DEFAULT_NATIONALITY,
+          'X-User-Nationality': ratingCountry,    // ← now dynamic
         },
         body: JSON.stringify({ feedback }),
       });
@@ -545,6 +595,7 @@ export default function DetailScreen({ route, navigation }) {
             <Animated.View style={[styles.heroSection, { transform: [{ translateY: keyboardOffset }] }]}>
 
               <ScrollView
+
                 ref={scrollViewRef}
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -552,10 +603,11 @@ export default function DetailScreen({ route, navigation }) {
                 alwaysBounceVertical={false}
                 bouncesZoom={false}
                 showsVerticalScrollIndicator={false}
+                
+                onScroll={({ nativeEvent }) => {
+                scrollPositionRef.current = nativeEvent.contentOffset.y;
+                }}
                 scrollEventThrottle={16}
-                onScroll={(event) => {
-                  setScrollPosition(event.nativeEvent.contentOffset.y);
-                } }
               >
                 <ImageBackground
                   source={dishData && dishData.img ? { uri: getImageUrl(dishData.img) } : require('./imgs/Fiorentina_Steak.jpg')}
@@ -670,7 +722,8 @@ export default function DetailScreen({ route, navigation }) {
                             } }
                             activeOpacity={0.8}
                           >
-                            <Ionicons name="chevron-down-outline" size={24} color="#666" />
+                            <Text style={styles.moreText}>More</Text>
+                             <Ionicons name="chevron-down-outline" size={20} color="#666" />
                           </TouchableOpacity>
                         </View>
                       )}
@@ -702,7 +755,6 @@ export default function DetailScreen({ route, navigation }) {
                           ))}
                         </View>
                         <Text style={styles.ratingFrom}>your rating as {getNation(DEFAULT_NATIONALITY).flag} {DEFAULT_NATIONALITY}</Text>
-                        <Text style={styles.settingsHint}>you can change your nationality in settings</Text>
                       </View>
                     </View>
                   </View>
@@ -731,7 +783,7 @@ export default function DetailScreen({ route, navigation }) {
           <View style={styles.headerLeft}>
             <TouchableOpacity
 
-              onPress={closeCountrySelection}
+              onPress={() => handleSelectNation(ratingCountry)}
               activeOpacity={0.6}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -766,29 +818,34 @@ export default function DetailScreen({ route, navigation }) {
         {/* — 平均星级卡片列表 — */}
         <FlatList
         data={starsByNation.filter(item =>
-          item.name.toLowerCase().includes(countryFilter.toLowerCase())
+            item.name.toLowerCase().includes(countryFilter.toLowerCase())
         )}
         keyExtractor={i => i.name}
         numColumns={2}
         columnWrapperStyle={styles.countryRow}
         contentContainerStyle={styles.countryList}
         renderItem={({ item }) => (
-          <View style={styles.countryCard}>
+            <TouchableOpacity
+            style={styles.countryCard}
+            activeOpacity={0.8}
+            onPress={() => handleSelectNation(item.name)}
+            >
             <Text style={styles.countryCardTitle}>
-              {getNation(item.name).flag} {item.name}
+                {getNation(item.name).flag} {item.name}
             </Text>
             <View style={styles.countryCardStars}>
-              {[1,2,3,4,5].map(i => (
+                {[1,2,3,4,5].map(i => (
                 <Ionicons
-                  key={i}
-                  name={i <= item.stars ? 'star' : 'star-outline'}
-                  size={20}
-                  color="#333"
+                    key={i}
+                    name={i <= item.stars ? 'star' : 'star-outline'}
+                    size={20}
+                    color="#333"
                 />
-              ))}
-            </View>
-          </View>
-        )} />
+                ))}
+      </View>
+    </TouchableOpacity>
+  )}
+/>
 
 
       </Animated.View></>
@@ -1178,9 +1235,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   countryButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 60,
+    height: 50,
+    borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1190,6 +1247,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     marginLeft: 16,
+    paddinng:5,
   },
   countryFlag: {
     fontSize: 24,
@@ -1550,4 +1608,10 @@ countrySelectionPage: {
   countryCardStars: {
     flexDirection: 'row',
   },
+  moreText: {
+  fontSize: 16,
+  fontWeight: '250',
+  color: '#666',
+
+}
 });
