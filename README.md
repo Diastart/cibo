@@ -65,8 +65,8 @@ The frontend is a React Native application built with Expo SDK 53 and React 19, 
 
 ### Contributors
 
-<a href="https://github.com/arturkd">
-  <img src="https://github.com/arturkd.png" width="50"/>
+<a href="https://github.com/arturkadyrzhan">
+  <img src="https://github.com/arturkadyrzhan.png" width="50"/>
 </a>
 <a href="https://github.com/nursultandias">
   <img src="https://github.com/nursultandias.png" width="50"/>
