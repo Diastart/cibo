@@ -34,7 +34,7 @@ The server defaults to running on port 4000.
 
 The frontend is a React Native application built with Expo SDK 53 and React 19, ensuring compatibility with both iOS and Android devices.
 
-**Key Features & Technologies:**
+**Key Features:**
 
 - Framework: React Native  
 - SDK: Expo SDK 53  
@@ -54,16 +54,6 @@ The frontend is a React Native application built with Expo SDK 53 and React 19, 
 
 ---
 
-## Screenshots
-
-_Add screenshots or screen recordings of the app here_
-
-![App Screenshot 1](images/screenshot1.png)  
-![App Screenshot 2](images/screenshot2.png)  
-![App Screenshot 3](images/screenshot3.png)
-
----
-
 ## Future Enhancements
 
 - Auto-suggestion for the search bar  
@@ -73,23 +63,19 @@ _Add screenshots or screen recordings of the app here_
 
 ---
 
-## AI Integration
+### Contributors
 
-AI tools supported the project lifecycle with:
-
-- Report writing and documentation refinement  
-- Persona generation for user-centered design  
-- Survey optimization  
-- Storyboard creation  
-- Code debugging assistance
-
----
-
-## Project Team
-
-- [Artur Kadyrzhanov](https://github.com/arturkd)  
-- [Dias Nursultan](https://github.com/nursultandias)
-- [Beray Nil Atabey](https://github.com/NilAtabey)  
-- [Liyu Jin](https://github.com/kk-Syuer)
+<a href="https://github.com/arturkd">
+  <img src="https://github.com/arturkd.png" width="50"/>
+</a>
+<a href="https://github.com/nursultandias">
+  <img src="https://github.com/nursultandias.png" width="50"/>
+</a>
+<a href="https://github.com/NilAtabey">
+  <img src="https://github.com/NilAtabey.png" width="50"/>
+</a>
+<a href="https://github.com/kk-Syuer">
+  <img src="https://github.com/kk-Syuer.png" width="50"/>
+</a>
 
 ---
