@@ -52,6 +52,10 @@ The frontend is a React Native application built with Expo SDK 53 and React 19, 
 - Dietary badges (Vegetarian, Vegan, Halal, Kosher, Gluten-Free) based on ingredient analysis  
 - Smooth animations, robust error handling, and scroll state persistence
 
+### App Screenshots
+
+![CiboCompass App Screenshots](screenshots.png)
+
 ---
 
 ## Future Enhancements
