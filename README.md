@@ -1,7 +1,7 @@
 # CiboCompass
 
 <p align="center">
-  <img src="logo.jpg" width="150"/> </p>
+  <img src="logo.jpg" width="350"/> </p>
 CiboCompass is a mobile application designed to assist international students in Italy with understanding local cuisine from both nutritional and cultural perspectives. The project helps international students navigate unfamiliar restaurant menus by providing details on dish ingredients, cultural taste preferences, and community-based ratings.
 
 ---
