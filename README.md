@@ -4,6 +4,8 @@
   <img src="logo.jpg" width="350"/> </p>
 CiboCompass is a mobile application designed to assist international students in Italy with understanding local cuisine from both nutritional and cultural perspectives. The project helps international students navigate unfamiliar restaurant menus by providing details on dish ingredients, cultural taste preferences, and community-based ratings.
 
+This project was completed for the Human-Computer Interaction class, taught by Prof. Emanuele Panizzi, as part of the BSc in Applied Computer Science and Artificial Intelligence at Sapienza University of Rome.
+
 ---
 
 ## Technical Overview
@@ -83,5 +85,10 @@ The frontend is a React Native application built with Expo SDK 53 and React 19, 
 <a href="https://github.com/kk-Syuer">
   <img src="https://github.com/kk-Syuer.png" width="50"/>
 </a>
-
+<a href="https://github.com/GioiaZheng">
+  <img src="https://github.com/GioiaZheng.png" width="50"/>
+</a>
+<a href="https://github.com/jansaya0412">
+  <img src="https://github.com/jansaya0412.png" width="50"/>
+</a>
 ---
