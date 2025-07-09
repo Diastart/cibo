@@ -91,4 +91,3 @@ The frontend is a React Native application built with Expo SDK 53 and React 19, 
 <a href="https://github.com/jansaya0412">
   <img src="https://github.com/jansaya0412.png" width="50"/>
 </a>
----
